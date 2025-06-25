@@ -3,7 +3,7 @@ use std::fs;
 use std::collections::LinkedList;
 use regex::Regex;
 #[derive(Debug)]
-enum Token{
+pub enum Token{
     IDENT,
     PLUS,
     MINUS,
@@ -31,34 +31,52 @@ impl std::fmt::Display for Token {
     }
 }
 
-fn tokenizer(s: &str) -> Token {
-    let digit_re = Regex::new(r"^\d+$").unwrap();
-    if digit_re.is_match(s){
-        return Token::NUM
-    }
-    match s {
-       ")" => Token::R_PAREN,
-       "(" => Token::L_PAREN,
-       "for" => Token::FOR,
-       "{" => Token::L_CURLY,
-       "}" => Token::R_CURLY,
-       "+" => Token::PLUS,
-       "-" => Token::MINUS,
-       "*" => Token::MUL,
-       "/" => Token::DIV,
-       "%" => Token::MOD,
-       "if" => Token::IF,
-       "else" => Token::ELSE,
-       ";" => Token::SEMICLN,
-       "::" => Token::DBL_CLN,
-       "++" => Token::DBL_PLUS,
-       "." => Token::DOT,
-       ".." => Token::DBL_DOT,
-        _ => Token::IDENT
-    }
+fn is_num(s: &str) -> bool {
+    // numbers cannot begin with any leading zeroes.
+    Regex::new(r"^[1-9][0-9]*")
+        .unwrap()
+        .is_match(s)
 }
 
-pub fn scan(file: &str){
+fn is_ident(s: &str) -> bool {
+    Regex::new(r"^[a-zA-Z_][a-zA-Z_0-9]*$")
+        .unwrap()
+        .is_match(s)
+}
+
+fn tokenizer(s: &str) -> Token {
+    if is_num(s) {
+        return Token::NUM;
+    }
+    else if is_ident(s) {
+        return Token::IDENT;
+    }
+    else {
+        match s {
+            ")" => Token::R_PAREN,
+            "(" => Token::L_PAREN,
+            "for" => Token::FOR,
+            "{" => Token::L_CURLY,
+            "}" => Token::R_CURLY,
+            "+" => Token::PLUS,
+            "-" => Token::MINUS,
+            "*" => Token::MUL,
+            "/" => Token::DIV,
+            "%" => Token::MOD,
+            "if" => Token::IF,
+            "else" => Token::ELSE,
+            ";" => Token::SEMICLN,
+            "::" => Token::DBL_CLN,
+            "++" => Token::DBL_PLUS,
+            "." => Token::DOT,
+            ".." => Token::DBL_DOT,
+            _ => panic!("Unknown character: {}", s)
+        }
+    }
+
+}
+
+pub fn scan(file: &str) -> LinkedList<Token>{
     let contents = match std::fs::read_to_string(file){
         Ok(c) => c,
         Err(e) => {
@@ -67,13 +85,17 @@ pub fn scan(file: &str){
         }
     };
 
-    let split: Vec<&str> = contents.split_whitespace().collect();
     let mut token_list: LinkedList<Token> = LinkedList::new();
 
-    for part in split {
-        token_list.push_back(tokenizer(part));
+    for part in contents.split(';') {
+        for token_str in part.split_whitespace() {
+            println!("{}", token_str); // See each token string
+            token_list.push_back(tokenizer(token_str));
+        }
     }
+
     for token in token_list.iter() {
         println!("{}", token);
     }
+    return token_list;
 }
