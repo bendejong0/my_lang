@@ -2,29 +2,8 @@ use std::process;
 use std::fs;
 use std::collections::LinkedList;
 use regex::Regex;
-#[derive(Debug)]
-pub enum Token{
-    IDENT,
-    PLUS,
-    MINUS,
-    MUL,
-    DIV,
-    MOD,
-    R_CURLY,
-    L_CURLY,
-    L_PAREN,
-    R_PAREN,
-    IF,
-    ELSE,
-    FOR,
-    SEMICLN,
-    DBL_CLN,
-    DBL_PLUS,
-    DOT,
-    DBL_DOT,
-    NUM_VALUE,
-    NUM_IDENT
-}
+use crate::token::Token as Token;
+
 
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -44,6 +23,7 @@ fn is_ident(s: &str) -> bool {
         .unwrap()
         .is_match(s)
 }
+
 
 fn tokenizer(s: &str) -> Token {
     if is_num(s) {
