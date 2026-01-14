@@ -1,0 +1,24 @@
+#[derive(PartialEq)]
+pub enum Token{
+    IDENT,
+    PLUS,
+    MINUS,
+    MUL,
+    DIV,
+    MOD,
+    R_CURLY,
+    L_CURLY,
+    L_PAREN,
+    R_PAREN,
+    IF,
+    ELSE,
+    FOR,
+    SEMICLN,
+    DBL_CLN,
+    DBL_PLUS,
+    DOT,
+    DBL_DOT,
+    NUM_VALUE,
+    NUM_IDENT,
+    EQ
+}

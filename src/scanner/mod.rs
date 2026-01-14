@@ -22,7 +22,8 @@ pub enum Token{
     DBL_PLUS,
     DOT,
     DBL_DOT,
-    NUM
+    NUM_VALUE,
+    NUM_IDENT
 }
 
 impl std::fmt::Display for Token {
@@ -46,7 +47,7 @@ fn is_ident(s: &str) -> bool {
 
 fn tokenizer(s: &str) -> Token {
     if is_num(s) {
-        return Token::NUM;
+        return Token::NUM_IDENT;
     }
     else if is_ident(s) {
         return Token::IDENT;
@@ -70,6 +71,7 @@ fn tokenizer(s: &str) -> Token {
             "++" => Token::DBL_PLUS,
             "." => Token::DOT,
             ".." => Token::DBL_DOT,
+            "number" => Token::NUM_IDENT,
             _ => panic!("Unknown character: {}", s)
         }
     }

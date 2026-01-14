@@ -1,0 +1,15 @@
+Program -> (Libraries)*(Function)*(Main)
+
+Main -> "main(){" Expression* "return" Value ";""}"
+
+Expression  -> Declaration";"
+            | RValue";"
+
+Declaration -> Type Ident ("=" RValue)?";"
+
+RValue      -> Math
+            |  String
+
+Math        -> Number (BinaryOperator Number)* | (UnaryOperator)
+
+Number      -> (1-9)(0-9)* | (0-9)*
