@@ -3,6 +3,7 @@ use std::fmt;
 #[allow(non_camel_case_types)]
 #[derive(PartialEq)]
 pub enum Token{
+    MAIN,
     IDENT,
     PLUS,
     MINUS,

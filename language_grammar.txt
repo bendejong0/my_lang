@@ -1,15 +1,20 @@
-Program -> (Libraries)*(Function)*(Main)
+Program     → Main
 
-Main -> "main(){" Expression* "return" Value ";""}"
+Main        → MAIN L_PAREN R_PAREN L_CURLY Expression* RETURN RValue SEMICLN R_CURLY
 
-Expression  -> Declaration";"
-            | RValue";"
+Expression  → Declaration
+            | RValue SEMICLN
 
-Declaration -> Type Ident ("=" RValue)?";"
+Declaration → NUM_IDENT IDENT (EQ RValue)? SEMICLN
 
-RValue      -> Math
-            |  String
+RValue      → Math
+            | NUM_VALUE
+            | IDENT
 
-Math        -> Number (BinaryOperator Number)* | (UnaryOperator)
+Math        → NUM_VALUE (BinaryOperator NUM_VALUE)*
+            | UnaryOperator NUM_VALUE
 
-Number      -> (1-9)(0-9)* | (0-9)*
+BinaryOperator → PLUS | MINUS | MUL | DIV | MOD
+
+UnaryOperator  → DBL_PLUS | MINUS
+

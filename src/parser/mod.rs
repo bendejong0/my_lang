@@ -2,6 +2,62 @@ use std::collections::LinkedList;
 use crate::token::Token as Token;
 use crate::scanner;
 
+
+// TODO: implement this.
+fn rvalue(tokens: &mut Vec<Token>) -> bool {
+    math_expression(tokens)
+        || matches!(tokens.first(), Some(Token::NUM_VALUE)) && {
+            tokens.pop_front();
+            true
+        }
+        || matches!(tokens.first(), Some(Token::IDENT)) && {
+            tokens.pop_front();
+            true
+        }
+}
+
+fn binary_operator(token_list: &mut LinkedList<Token>) -> bool {
+    match token_list.pop_front() {
+        Some(Token::PLUS | Token::MINUS | Token::DIV) => {}
+        _ => return false,
+    }
+
+    match token_list.pop_front() {
+        Some(Token::NUM_VALUE) => true,
+        _ => false,
+    }
+}
+
+
+fn unary_operator(token_list: &mut LinkedList<Token>) -> bool {
+    if token_list.front() == Some(Token::DBL_PLUS) {
+        return true;
+    }
+
+    return false;
+}
+
+fn math_expression(token_list: &mut LinkedList<Token>) -> bool {
+// Checks to make sure a math expression is valid.
+// Inputs: LinkedList of Tokens
+// Outputs: Bool. If math_expression is valid, then true. Else, false
+    
+    let mut iter = token_list.iter();
+    match iter.next() {
+        Some(Token::NUM_VALUE) => {}
+        _ => return false,
+    }
+    token_list.pop_front();
+    if unary_operator(token_list) {
+        return true;
+    }
+    else if binary_operator(token_list) {
+        return true;
+    }
+
+    return false;
+}
+
 fn declaration(token_list: &mut LinkedList<Token>) -> bool {
 // Checks to make sure a declaration is valid.
 // Inputs: LinkedList of Tokens
@@ -11,31 +67,28 @@ fn declaration(token_list: &mut LinkedList<Token>) -> bool {
 
     // Create an iterator for lookahead
     let mut iter = token_list.iter();
-
+    match iter.next() {
+        Some(Token::NUM_IDENT) => { iter.next(); token_list.pop_front(); }
+        _ => return false,
+    }
     // First token must be IDENT
     match iter.next() {
-        Some(Token::IDENT) => {}
+        Some(Token::IDENT) => { iter.next(); token_list.pop_front(); }
         _ => return false,
     }
 
-    // Look ahead one token
+    
     match iter.next() {
-        // Case: IDENT = NUM_VALUE ;
+        // Case: IDENT = MATH
         Some(Token::EQ) => {
-            match (iter.next(), iter.next()) {
-                (Some(Token::NUM_VALUE), Some(Token::SEMICLN)) => {
-                    token_list.pop_front(); // consume IDENT
+            match iter.next() {
+                Some(Token::NUM_VALUE) => {
+                    math_expression(token_list); 
                     return true;
                 }
                 _ => return false,
             }
         }
-
-        // Case: IDENT ;
-        Some(Token::SEMICLN) => {
-            return true;
-        }
-
         _ => return false,
     }
 }
@@ -50,7 +103,7 @@ fn expression(token_list: &mut LinkedList<Token>) -> bool {
     }
     // If the declaration is ok, check for a semicolon.
     if let Some(Token::SEMICLN) = token_list.front() {
-        valid_sentence = false;
+        valid_sentence = true;
     }
     return valid_sentence;
 }
