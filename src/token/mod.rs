@@ -51,6 +51,7 @@ impl fmt::Debug for Token {
             Token::NUM_VALUE => "NUM_VALUE",
             Token::NUM_IDENT => "NUM_IDENT",
             Token::EQ => "EQ",
+            Token::MAIN => todo!(), // TODO: Fix this.
         };
         write!(f, "{}", s)
     }

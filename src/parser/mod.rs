@@ -3,17 +3,24 @@ use crate::token::Token as Token;
 use crate::scanner;
 
 
-// TODO: implement this.
-fn rvalue(tokens: &mut Vec<Token>) -> bool {
-    math_expression(tokens)
-        || matches!(tokens.first(), Some(Token::NUM_VALUE)) && {
-            tokens.pop_front();
-            true
-        }
-        || matches!(tokens.first(), Some(Token::IDENT)) && {
-            tokens.pop_front();
-            true
-        }
+// rvalue: either a math expression, a numeric literal, or an identifier.
+fn rvalue(token_list: &mut LinkedList<Token>) -> bool {
+    if math_expression(token_list) {
+        return true;
+    }
+
+    // works similar to equal
+    if token_list.front() == Some(&Token::NUM_VALUE) {
+        token_list.pop_front();
+        return true;
+    }
+
+    if token_list.front() == Some(&Token::IDENT) {
+        token_list.pop_front();
+        return true;
+    }
+
+    false
 }
 
 fn binary_operator(token_list: &mut LinkedList<Token>) -> bool {
@@ -30,7 +37,7 @@ fn binary_operator(token_list: &mut LinkedList<Token>) -> bool {
 
 
 fn unary_operator(token_list: &mut LinkedList<Token>) -> bool {
-    if token_list.front() == Some(Token::DBL_PLUS) {
+    if token_list.front() == Some(&Token::DBL_PLUS) {
         return true;
     }
 
@@ -59,29 +66,31 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> bool {
 }
 
 fn declaration(token_list: &mut LinkedList<Token>) -> bool {
-// Checks to make sure a declaration is valid.
-// Inputs: LinkedList of Tokens
-// Outputs: Bool. If the declaration is valid, then true. Otherwise, false.
-//
-// Note: Consumes tokens used during the declaration.
+    // Checks to make sure a declaration is valid.
+    // Inputs: LinkedList of Tokens
+    // Outputs: Bool. If the declaration is valid, then true. Otherwise, false.
+    //
+    // Note: Consumes tokens used during the declaration.
 
     // Create an iterator for lookahead
-    let mut iter = token_list.iter();
-    match iter.next() {
-        Some(Token::NUM_IDENT) => { iter.next(); token_list.pop_front(); }
-        _ => return false,
+
+    if token_list.iter().next() == Some(&Token::NUM_IDENT){
+        token_list.pop_front();
+    } else {
+        return false;
     }
+        
     // First token must be IDENT
-    match iter.next() {
-        Some(Token::IDENT) => { iter.next(); token_list.pop_front(); }
-        _ => return false,
+    if token_list.iter().next() == Some(&Token::IDENT) {
+        token_list.pop_front();
+    } else {
+        return false;
     }
 
-    
-    match iter.next() {
+    match token_list.iter().next() {
         // Case: IDENT = MATH
         Some(Token::EQ) => {
-            match iter.next() {
+            match token_list.iter().next() {
                 Some(Token::NUM_VALUE) => {
                     math_expression(token_list); 
                     return true;
@@ -111,7 +120,9 @@ fn expression(token_list: &mut LinkedList<Token>) -> bool {
 // returns true if it's a valid sentence.
 pub fn parse(file: &str) -> bool {
     let mut token_list: LinkedList<Token> = scanner::scan(file);
-    
+    if !expression(&mut token_list) {
+        return false;
+    }    
 
     return true;
 }
