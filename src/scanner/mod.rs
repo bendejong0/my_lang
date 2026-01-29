@@ -96,6 +96,7 @@ pub fn scan(file: &str) -> LinkedList<Token> {
             token_list.push_back(tokenizer(";"));
         }
     }
+    println!("Token List: {:?}", token_list);
 
     token_list
 }
