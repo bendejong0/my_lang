@@ -10,6 +10,10 @@ Declaration → NUM_IDENT IDENT (EQ RValue)? SEMICLN
 RValue      → Math
             | NUM_VALUE
             | IDENT
+            | List
+            | RValue :: RValue
+
+List        → L
 
 Math        → NUM_VALUE (BinaryOperator NUM_VALUE)*
             | UnaryOperator NUM_VALUE
