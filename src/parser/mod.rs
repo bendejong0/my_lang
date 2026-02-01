@@ -8,7 +8,40 @@ fn rvalue(token_list: &mut LinkedList<Token>) -> bool {
     if math_expression(token_list) {
         return true;
     }
+    else if list(token_list) {
+        return true;
+    }
     return false;
+}
+
+fn list(token_list: &mut LinkedList<Token>) -> bool {
+    // Checks to make sure a list is valid.
+    // Inputs: LinkedList of Tokens
+    // Outputs: Bool. If the list is valid, then true. Otherwise, false.
+
+    match token_list.front() {
+        Some(Token::L_BRACK) => { token_list.pop_front(); }
+        _ => return false,
+    }
+    println!("Its a list! Line {:?} Token List: {:?}", line!(), token_list);
+
+    match token_list.front() {
+        Some(Token::NUM_VALUE) => { token_list.pop_front(); }
+        _ => return false,
+    }
+
+    while token_list.front() == Some(&Token::COMMA) {
+        token_list.pop_front();
+        match token_list.front() {
+            Some(Token::NUM_VALUE) => { token_list.pop_front(); }
+            _ => return false,
+        }
+    }
+
+    match token_list.front() {
+        Some(Token::R_BRACK) => { token_list.pop_front(); return true; }
+        _ => return false,
+    }
 }
 
 fn binary_operator(token_list: &mut LinkedList<Token>) -> bool {
@@ -44,6 +77,7 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> bool {
         Some(Token::NUM_VALUE) => {}
         _ => return false,
     }  
+    println!("Its a math expression! Line {:?} Token List: {:?}", line!(), token_list);
     token_list.pop_front(); 
 
     if token_list.iter().next() == Some(&Token::PLUS) || token_list.iter().next() == Some(&Token::MINUS) || token_list.iter().next() == Some(&Token::DIV) {
@@ -99,6 +133,9 @@ fn expression(token_list: &mut LinkedList<Token>) -> bool {
     if token_list.front() == Some(&Token::NUM_IDENT) {
         //token_list.pop_front();
         valid_sentence = declaration(token_list);
+    }
+    else if rvalue(token_list) {
+        valid_sentence = true;
     }
     // If the declaration is ok, check for a semicolon.
     if let Some(Token::SEMICLN) = token_list.front() {

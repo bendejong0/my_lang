@@ -24,7 +24,10 @@ pub enum Token{
     DBL_DOT,
     NUM_VALUE,
     NUM_IDENT,
-    EQ
+    EQ,
+    L_BRACK,
+    R_BRACK,
+    COMMA
 }
 
 impl fmt::Debug for Token {
@@ -52,6 +55,9 @@ impl fmt::Debug for Token {
             Token::NUM_IDENT => "NUM_IDENT",
             Token::EQ => "EQ",
             Token::MAIN => "MAIN",
+            Token::L_BRACK => "L_BRACK",
+            Token::R_BRACK => "R_BRACK",
+            Token::COMMA => "COMMA",
         };
         write!(f, "{}", s)
     }

@@ -65,6 +65,9 @@ fn tokenizer(s: &str) -> Token {
             "number" => Token::NUM_IDENT,
             "main" => Token::MAIN,
             "=" => Token::EQ,
+            "[" => Token::L_BRACK,
+            "]" => Token::R_BRACK,
+            "," => Token::COMMA,
             _ => panic!("Unknown character: {}", s)
         }
     }
@@ -73,6 +76,9 @@ fn tokenizer(s: &str) -> Token {
 // TODO: Improve to allow declarations such as:
 // number x=5;
 // currently you must do number x = 5;
+
+// TODO: Improve things like [3, 4, 5] so that the brackets and commas are handled without spaces.
+// currently you must do [ 3 , 4 , 5 ]
 pub fn scan(file: &str) -> LinkedList<Token> {
     let contents = match std::fs::read_to_string(file) {
         Ok(c) => c,
