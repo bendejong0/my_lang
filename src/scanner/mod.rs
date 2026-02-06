@@ -23,6 +23,8 @@ fn is_reserved_word(s: &str) -> bool {
 }
 
 fn is_num(s: &str) -> bool {
+    println!("Checking for number {:?}", s);
+
     // numbers cannot begin with any leading zeroes.
     Regex::new(r"^[1-9][0-9]*")
         .unwrap()
@@ -36,41 +38,49 @@ fn is_ident(s: &str) -> bool {
 }
 
 
-fn tokenizer(s: &str) -> Token {
+fn tokenizer(s: &str) -> Vec<Token> {
+    let mut tokens = Vec::new();
+
     if is_num(s) {
-        return Token::NUM_VALUE;
-    }
-    if is_ident(s) && !is_reserved_word(s) {
-        return Token::IDENT;
-    }
-    else {
+        if s.ends_with(",") {
+            // Split the number and the comma
+            tokens.push(Token::NUM_VALUE); // Return NUM_VALUE first
+            tokens.push(Token::COMMA); // Then COMMA
+            return tokens;
+        }
+        tokens.push(Token::NUM_VALUE);
+    } else if is_ident(s) && !is_reserved_word(s) {
+        tokens.push(Token::IDENT);
+    } else {
         match s {
-            ")" => Token::R_PAREN,
-            "(" => Token::L_PAREN,
-            "for" => Token::FOR,
-            "{" => Token::L_CURLY,
-            "}" => Token::R_CURLY,
-            "+" => Token::PLUS,
-            "-" => Token::MINUS,
-            "*" => Token::MUL,
-            "/" => Token::DIV,
-            "%" => Token::MOD,
-            "if" => Token::IF,
-            "else" => Token::ELSE,
-            ";" => Token::SEMICLN,
-            "::" => Token::DBL_CLN,
-            "++" => Token::DBL_PLUS,
-            "." => Token::DOT,
-            ".." => Token::DBL_DOT,
-            "number" => Token::NUM_IDENT,
-            "main" => Token::MAIN,
-            "=" => Token::EQ,
-            "[" => Token::L_BRACK,
-            "]" => Token::R_BRACK,
-            "," => Token::COMMA,
-            _ => panic!("Unknown character: {}", s)
+            ")" => tokens.push(Token::R_PAREN),
+            "(" => tokens.push(Token::L_PAREN),
+            "for" => tokens.push(Token::FOR),
+            "{" => tokens.push(Token::L_CURLY),
+            "}" => tokens.push(Token::R_CURLY),
+            "+" => tokens.push(Token::PLUS),
+            "-" => tokens.push(Token::MINUS),
+            "*" => tokens.push(Token::STAR),
+            "/" => tokens.push(Token::SLASH),
+            "%" => tokens.push(Token::MOD),
+            "if" => tokens.push(Token::IF),
+            "else" => tokens.push(Token::ELSE),
+            ";" => tokens.push(Token::SEMICLN),
+            "::" => tokens.push(Token::DBL_CLN),
+            "++" => tokens.push(Token::DBL_PLUS),
+            "." => tokens.push(Token::DOT),
+            ".." => tokens.push(Token::DBL_DOT),
+            "number" => tokens.push(Token::NUM_IDENT),
+            "main" => tokens.push(Token::MAIN),
+            "=" => tokens.push(Token::EQ),
+            "[" => tokens.push(Token::L_BRACK),
+            "]" => tokens.push(Token::R_BRACK),
+            "," => tokens.push(Token::COMMA),
+            _ => panic!("Unknown character: {}", s),
         }
     }
+
+    tokens
 }
 
 // TODO: Improve to allow declarations such as:
@@ -94,12 +104,15 @@ pub fn scan(file: &str) -> LinkedList<Token> {
 
     while let Some(part) = parts.next() {
         for token_str in part.split_whitespace() {
-            token_list.push_back(tokenizer(token_str));
+            let tokens = tokenizer(token_str);
+            for token in tokens {
+                token_list.push_back(token);
+            }
         }
 
         // Put the semicolon back *if it actually existed*
         if parts.peek().is_some() {
-            token_list.push_back(tokenizer(";"));
+            token_list.push_back(Token::SEMICLN);
         }
     }
     println!("Token List: {:?}", token_list);

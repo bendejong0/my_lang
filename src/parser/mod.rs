@@ -40,9 +40,8 @@ fn list(token_list: &mut LinkedList<Token>) -> bool {
 }
 
 fn binary_operator(token_list: &mut LinkedList<Token>) -> bool {
-
     match token_list.front() {
-        Some(Token::PLUS | Token::MINUS | Token::DIV) => {}
+        Some(Token::PLUS | Token::MINUS | Token::STAR | Token::SLASH) => {}
         _ => return false,
     }
     token_list.pop_front();
@@ -73,7 +72,7 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> bool {
     }  
     token_list.pop_front(); 
 
-    if token_list.iter().next() == Some(&Token::PLUS) || token_list.iter().next() == Some(&Token::MINUS) || token_list.iter().next() == Some(&Token::DIV) {
+    if token_list.iter().next() == Some(&Token::PLUS) || token_list.iter().next() == Some(&Token::MINUS) || token_list.iter().next() == Some(&Token::SLASH) {
         return binary_operator(token_list);
     }
 
