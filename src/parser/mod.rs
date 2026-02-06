@@ -1,40 +1,43 @@
 use std::collections::LinkedList;
-use crate::token::{self, Token as Token};
+use crate::token::Token as Token;
 use crate::scanner;
 
 
 // rvalue: either a math expression, a numeric literal, or an identifier.
 fn rvalue(token_list: &mut LinkedList<Token>) -> bool {
-    if math_expression(token_list) {
-        return true;
-    }
-    else if list(token_list) {
-        return true;
-    }
-    return false;
+    return math_expression(token_list) || list(token_list);
 }
 
 fn list(token_list: &mut LinkedList<Token>) -> bool {
     // Checks to make sure a list is valid.
     // Inputs: LinkedList of Tokens
     // Outputs: Bool. If the list is valid, then true. Otherwise, false.
-
     match token_list.front() {
         Some(Token::L_BRACK) => { token_list.pop_front(); }
         _ => return false,
     }
-    println!("Its a list! Line {:?} Token List: {:?}", line!(), token_list);
-
-    match token_list.front() {
-        Some(Token::NUM_VALUE) => { token_list.pop_front(); }
-        _ => return false,
+    // check for empty bracket
+    if token_list.front() == Some(&Token::R_BRACK) {
+        token_list.pop_front();
+        return true;
     }
 
+    if !rvalue(token_list){
+        return false;
+    }
+
+    //match token_list.front() {
+    //    Some(Token::NUM_VALUE) => { token_list.pop_front(); }
+    //    _ => return false,
+    //}
     while token_list.front() == Some(&Token::COMMA) {
         token_list.pop_front();
-        match token_list.front() {
-            Some(Token::NUM_VALUE) => { token_list.pop_front(); }
-            _ => return false,
+        //match token_list.front() {
+          //  Some(Token::NUM_VALUE) => { token_list.pop_front(); }
+           // _ => return false,
+        //}
+        if !rvalue(token_list){
+            return false;
         }
     }
 
@@ -51,7 +54,6 @@ fn binary_operator(token_list: &mut LinkedList<Token>) -> bool {
         _ => return false,
     }
     token_list.pop_front();
-    println!("Line {:?} Token List: {:?}", line!(), token_list);
     match token_list.front() {
         Some(Token::NUM_VALUE) => { token_list.pop_front(); return true; }
         _ => false,
@@ -77,7 +79,6 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> bool {
         Some(Token::NUM_VALUE) => {}
         _ => return false,
     }  
-    println!("Its a math expression! Line {:?} Token List: {:?}", line!(), token_list);
     token_list.pop_front(); 
 
     if token_list.iter().next() == Some(&Token::PLUS) || token_list.iter().next() == Some(&Token::MINUS) || token_list.iter().next() == Some(&Token::DIV) {
@@ -87,6 +88,7 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> bool {
     else if token_list.iter().next() == Some(&Token::DBL_PLUS) {
         unary_operator(token_list);
     }
+
 
     return true;
 }
@@ -129,30 +131,33 @@ fn declaration(token_list: &mut LinkedList<Token>) -> bool {
 // right now, the only expression is declaration.
 // An expression must end with a semicolon.
 fn expression(token_list: &mut LinkedList<Token>) -> bool {
-    let mut valid_sentence: bool= true;
-    if token_list.front() == Some(&Token::NUM_IDENT) {
+    // check for empty expression
+    if token_list.front() == Some(&Token::SEMICLN) {
+        token_list.pop_front();
+        return true;
+    }
+
+    let mut valid_expression = if token_list.front() == Some(&Token::NUM_IDENT) {
         //token_list.pop_front();
-        valid_sentence = declaration(token_list);
+        declaration(token_list)
     }
-    else if rvalue(token_list) {
-        valid_sentence = true;
+    else{ 
+        rvalue(token_list)
+    };
+
+    if !valid_expression {
+        return false;
     }
-    // If the declaration is ok, check for a semicolon.
-    if let Some(Token::SEMICLN) = token_list.front() {
-        valid_sentence = true;
+
+    else if Some(&Token::SEMICLN) == token_list.front() {
+        valid_expression = true;
     }
-    else {
-        valid_sentence = false;
-    }
-    return valid_sentence;
+
+    return valid_expression;
 }
 
 // returns true if it's a valid sentence.
 pub fn parse(file: &str) -> bool {
     let mut token_list: LinkedList<Token> = scanner::scan(file);
-    if !expression(&mut token_list) {
-        return false;
-    }
-
-    return true;
+    return expression(&mut token_list);
 }
