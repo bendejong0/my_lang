@@ -26,16 +26,8 @@ fn list(token_list: &mut LinkedList<Token>) -> bool {
         return false;
     }
 
-    //match token_list.front() {
-    //    Some(Token::NUM_VALUE) => { token_list.pop_front(); }
-    //    _ => return false,
-    //}
     while token_list.front() == Some(&Token::COMMA) {
         token_list.pop_front();
-        //match token_list.front() {
-          //  Some(Token::NUM_VALUE) => { token_list.pop_front(); }
-           // _ => return false,
-        //}
         if !rvalue(token_list){
             return false;
         }
@@ -138,7 +130,6 @@ fn expression(token_list: &mut LinkedList<Token>) -> bool {
     }
 
     let mut valid_expression = if token_list.front() == Some(&Token::NUM_IDENT) {
-        //token_list.pop_front();
         declaration(token_list)
     }
     else{ 
