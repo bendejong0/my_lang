@@ -26,7 +26,8 @@ fn is_num(s: &str) -> bool {
     println!("Checking for number {:?}", s);
 
     // numbers cannot begin with any leading zeroes.
-    Regex::new(r"^[1-9][0-9]*")
+    // Match the entire string: optional number followed by optional comma
+    Regex::new(r"^[1-9][0-9]*,?$")
         .unwrap()
         .is_match(s)
 }
@@ -40,43 +41,49 @@ fn is_ident(s: &str) -> bool {
 
 fn tokenizer(s: &str) -> Vec<Token> {
     let mut tokens = Vec::new();
+    let mut current_num = String::new();
 
-    if is_num(s) {
-        if s.ends_with(",") {
-            // Split the number and the comma
-            tokens.push(Token::NUM_VALUE); // Return NUM_VALUE first
-            tokens.push(Token::COMMA); // Then COMMA
-            return tokens;
+    for ch in s.chars() {
+        match ch {
+            '+' | '-' | '*' | '/' | '%' | '(' | ')' | '[' | ']' | ',' | '=' | ';' | '.' => {
+                // If we have a number built up, push it first
+                if !current_num.is_empty() {
+                    if is_num(&current_num) {
+                        tokens.push(Token::NUM_VALUE);
+                    } else if is_ident(&current_num) && !is_reserved_word(&current_num) {
+                        tokens.push(Token::IDENT);
+                    }
+                    current_num.clear();
+                }
+                
+                // Handle the operator/symbol
+                match ch {
+                    '+' => tokens.push(Token::PLUS),
+                    '-' => tokens.push(Token::MINUS),
+                    '*' => tokens.push(Token::STAR),
+                    '/' => tokens.push(Token::SLASH),
+                    '%' => tokens.push(Token::MOD),
+                    '(' => tokens.push(Token::L_PAREN),
+                    ')' => tokens.push(Token::R_PAREN),
+                    '[' => tokens.push(Token::L_BRACK),
+                    ']' => tokens.push(Token::R_BRACK),
+                    ',' => tokens.push(Token::COMMA),
+                    '=' => tokens.push(Token::EQ),
+                    ';' => tokens.push(Token::SEMICLN),
+                    '.' => tokens.push(Token::DOT),
+                    _ => {}
+                }
+            }
+            _ => current_num.push(ch),
         }
-        tokens.push(Token::NUM_VALUE);
-    } else if is_ident(s) && !is_reserved_word(s) {
-        tokens.push(Token::IDENT);
-    } else {
-        match s {
-            ")" => tokens.push(Token::R_PAREN),
-            "(" => tokens.push(Token::L_PAREN),
-            "for" => tokens.push(Token::FOR),
-            "{" => tokens.push(Token::L_CURLY),
-            "}" => tokens.push(Token::R_CURLY),
-            "+" => tokens.push(Token::PLUS),
-            "-" => tokens.push(Token::MINUS),
-            "*" => tokens.push(Token::STAR),
-            "/" => tokens.push(Token::SLASH),
-            "%" => tokens.push(Token::MOD),
-            "if" => tokens.push(Token::IF),
-            "else" => tokens.push(Token::ELSE),
-            ";" => tokens.push(Token::SEMICLN),
-            "::" => tokens.push(Token::DBL_CLN),
-            "++" => tokens.push(Token::DBL_PLUS),
-            "." => tokens.push(Token::DOT),
-            ".." => tokens.push(Token::DBL_DOT),
-            "number" => tokens.push(Token::NUM_IDENT),
-            "main" => tokens.push(Token::MAIN),
-            "=" => tokens.push(Token::EQ),
-            "[" => tokens.push(Token::L_BRACK),
-            "]" => tokens.push(Token::R_BRACK),
-            "," => tokens.push(Token::COMMA),
-            _ => panic!("Unknown character: {}", s),
+    }
+
+    // Handle any remaining number or identifier
+    if !current_num.is_empty() {
+        if is_num(&current_num) {
+            tokens.push(Token::NUM_VALUE);
+        } else if is_ident(&current_num) && !is_reserved_word(&current_num) {
+            tokens.push(Token::IDENT);
         }
     }
 
@@ -88,7 +95,7 @@ fn tokenizer(s: &str) -> Vec<Token> {
 // currently you must do number x = 5;
 
 // TODO: Improve things like [3, 4, 5] so that the brackets and commas are handled without spaces.
-// currently you must do [ 3 , 4 , 5 ]
+// currently you must do [ 3, 4, 5 ]
 pub fn scan(file: &str) -> LinkedList<Token> {
     let contents = match std::fs::read_to_string(file) {
         Ok(c) => c,
