@@ -44,8 +44,8 @@ fn rvalue(token_list: &mut LinkedList<Token>) -> Option<Expr> {
     };
     // if it's not a math expression or a list, then check if it's an identifier.
     match token_list.front() {
-        Some(Token::IDENT) => { token_list.pop_front(); return Some(Expr::Ident(String::new())); }
-        Some(Token::NUM_VALUE) => { token_list.pop_front(); return Some(Expr::Int(0)); }
+        Some(Token::IDENT(name)) => { let n = name.clone(); token_list.pop_front(); return Some(Expr::Ident(n)); }
+        Some(Token::NUM_VALUE(val)) => { let v = *val; token_list.pop_front(); return Some(Expr::Int(v)); }
         _ => return None,
     }
 }
@@ -55,58 +55,57 @@ fn list(token_list: &mut LinkedList<Token>) -> Option<Expr> {
     // Inputs: LinkedList of Tokens
     // Outputs: Bool. If the list is valid, then true. Otherwise, false.
     match token_list.front() {
-        Some(Token::L_BRACK) => { token_list.pop_front(); }
+        Some(Token::L_BRACK(_)) => { token_list.pop_front(); }
         _ => return None,
     }
     // check for empty bracket
-    if token_list.front() == Some(&Token::R_BRACK) {
+    if matches!(token_list.front(), Some(Token::R_BRACK(_))) {
         token_list.pop_front();
         return Some(Expr::List(vec![]));
     }
 
-    //if Some(rvalue(token_list)) {
-    //    return None;
-    //}
-    if rvalue(token_list).is_none() {
+    let mut list_items = vec![];
+    if let Some(expr) = rvalue(token_list) {
+        list_items.push(expr);
+    } else {
         return None;
     }
 
-    while token_list.front() == Some(&Token::COMMA) {
+    while matches!(token_list.front(), Some(Token::COMMA(_))) {
         token_list.pop_front();
-        if rvalue(token_list).is_none() {
+        if let Some(expr) = rvalue(token_list) {
+            list_items.push(expr);
+        } else {
             return None;
         }
     }
     match token_list.front() {
-        Some(Token::R_BRACK) => { token_list.pop_front(); return Some(Expr::List(vec![])); }
+        Some(Token::R_BRACK(_)) => { token_list.pop_front(); return Some(Expr::List(list_items)); }
         _ => return None,
     }
 }
 
 fn binary_operator(token_list: &mut LinkedList<Token>) -> Option<Expr> {
-    match token_list.front() {
-        Some(Token::PLUS | Token::MINUS | Token::STAR | Token::SLASH) => {}
-        _ => return None,
-    }
-
     let local_op: BinaryOperator = match token_list.front() {
-        Some(Token::PLUS) => BinaryOperator::Add,
-        Some(Token::MINUS) => BinaryOperator::Sub,
-        Some(Token::STAR) => BinaryOperator::Mul,
-        Some(Token::SLASH) => BinaryOperator::Div,
-        _ => unreachable!(),
+        Some(Token::PLUS(_)) => BinaryOperator::Add,
+        Some(Token::MINUS(_)) => BinaryOperator::Sub,
+        Some(Token::STAR(_)) => BinaryOperator::Mul,
+        Some(Token::SLASH(_)) => BinaryOperator::Div,
+        _ => return None,
     };
 
     token_list.pop_front();
-    match token_list.front() {
-        Some(Token::NUM_VALUE) => { token_list.pop_front(); return Some(Expr::Binary { op: local_op, left: Box::new(Expr::Int(0)), right: Box::new(Expr::Int(0)) }); }
+    match rvalue(token_list) {
+        Some(right_expr) => {
+            Some(Expr::Binary { op: local_op, left: Box::new(Expr::Int(0)), right: Box::new(right_expr) })
+        }
         _ => None,
     }
 }
 
 
 fn unary_operator(token_list: &mut LinkedList<Token>) -> bool {
-    if token_list.front() == Some(&Token::DBL_PLUS) {
+    if token_list.front() == Some(&Token::DBL_PLUS("++".to_string())) {
         return true;
     }
 
@@ -117,28 +116,20 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
 // Checks to make sure a math expression is valid.
 // Inputs: LinkedList of Tokens
 // Outputs: Bool. If math_expression is valid, then true. Else, false
-    let mut iter = token_list.iter();
-    // TODO: CUrrently broke, fix later.
-    match iter.next() {
-        Some(Token::NUM_VALUE) => {}, // Some(Expr::Int(n)),
-        _ => return None,
+    match token_list.front() {
+        Some(Token::NUM_VALUE(x)) => { let val = *x; token_list.pop_front(); return Some(Expr::Int(val)); }
+        _ => {},
     }  
-    token_list.pop_front();  // why is this unreachable?
 
-    if token_list.iter().next() == Some(&Token::PLUS)  || 
-       token_list.iter().next() == Some(&Token::MINUS) ||
-       token_list.iter().next() == Some(&Token::STAR)  || 
-       token_list.iter().next() == Some(&Token::SLASH) {
+    if matches!(token_list.front(), Some(Token::PLUS(_)) | Some(Token::MINUS(_)) | Some(Token::STAR(_)) | Some(Token::SLASH(_))) {
         return binary_operator(token_list);
     }
 
-    else if token_list.iter().next() == Some(&Token::DBL_PLUS) {
+    else if matches!(token_list.front(), Some(Token::DBL_PLUS(_))) {
         unary_operator(token_list);
     }
 
-    // TODO:
-    // THIS SHOULD NOT ALWAYS BE 0
-    return Option::Some(Expr::Int(0)); // TEMPORARY VARIABLE REDO LATER
+    return None;
     
 }
 
@@ -151,21 +142,21 @@ fn declaration(token_list: &mut LinkedList<Token>) -> Option<Expr> {
 
 
     // Create an iterator for lookahead
-    if token_list.iter().next() == Some(&Token::NUM_IDENT){
+    if matches!(token_list.front(), Some(Token::NUM_IDENT(_))){
         token_list.pop_front();
     } else {
         return None;
     }
         
     // First token must be IDENT
-    if token_list.iter().next() == Some(&Token::IDENT) {
+    if matches!(token_list.front(), Some(Token::IDENT(_))) {
         token_list.pop_front();
     } else {
         return None;
     }
-    match token_list.iter().next() {
+    match token_list.front() {
         // Case: IDENT = MATH
-        Some(Token::EQ) => {
+        Some(Token::EQ(_)) => {
                 token_list.pop_front();
                 match rvalue(token_list) {
                     Some(expr) => return Some(expr),
@@ -181,13 +172,13 @@ fn declaration(token_list: &mut LinkedList<Token>) -> Option<Expr> {
 // An expression must end with a semicolon.
 fn expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
     // check for empty expression
-    if token_list.front() == Some(&Token::SEMICLN) {
+    if matches!(token_list.front(), Some(Token::SEMICLN(_))) {
         token_list.pop_front();
         return Some(Expr::Empty);
     }
 
     // TODO: should this be mutable? 
-    let mut valid_expression: Option<Expr> = if token_list.front() == Some(&Token::NUM_IDENT) {
+    let mut valid_expression: Option<Expr> = if matches!(token_list.front(), Some(Token::NUM_IDENT(_))) {
         declaration(token_list)
     }
     else{ 
@@ -198,7 +189,7 @@ fn expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
         return None;
     }
 
-    else if Some(&Token::SEMICLN) == token_list.front() {
+    else if matches!(token_list.front(), Some(Token::SEMICLN(_))) {
         token_list.pop_front();
     }
 

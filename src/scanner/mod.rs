@@ -44,11 +44,11 @@ fn tokenizer(s: &str) -> Vec<Token> {
     // if it's a reserved word
     if is_reserved_word(s) {
         match s {
-            "for" => tokens.push(Token::FOR),
-            "number" => tokens.push(Token::NUM_IDENT),
-            "if" => tokens.push(Token::IF),
-            "else" => tokens.push(Token::ELSE),
-            "main" => tokens.push(Token::MAIN),
+            "for" => tokens.push(Token::FOR("for".to_string())),
+            "number" => tokens.push(Token::NUM_IDENT("number".to_string())),
+            "if" => tokens.push(Token::IF("if".to_string())),
+            "else" => tokens.push(Token::ELSE("else".to_string())),
+            "main" => tokens.push(Token::MAIN("main".to_string())),
             _ => {},
         }
     }
@@ -59,28 +59,28 @@ fn tokenizer(s: &str) -> Vec<Token> {
                 // If we have a number built up, push it first
                 if !current_num.is_empty() {
                     if is_num(&current_num) {
-                        tokens.push(Token::NUM_VALUE);
+                        tokens.push(Token::NUM_VALUE(current_num.parse().unwrap()));
                     } else if is_ident(&current_num) && !is_reserved_word(&current_num) {
-                        tokens.push(Token::IDENT);
+                        tokens.push(Token::IDENT(current_num.to_string())); // probably redundant.
                     }
                     current_num.clear();
                 }
                 
                 // Handle the operator/symbol
                 match ch {
-                    '+' => tokens.push(Token::PLUS),
-                    '-' => tokens.push(Token::MINUS),
-                    '*' => tokens.push(Token::STAR),
-                    '/' => tokens.push(Token::SLASH),
-                    '%' => tokens.push(Token::MOD),
-                    '(' => tokens.push(Token::L_PAREN),
-                    ')' => tokens.push(Token::R_PAREN),
-                    '[' => tokens.push(Token::L_BRACK),
-                    ']' => tokens.push(Token::R_BRACK),
-                    ',' => tokens.push(Token::COMMA),
-                    '=' => tokens.push(Token::EQ),
-                    ';' => tokens.push(Token::SEMICLN),
-                    '.' => tokens.push(Token::DOT),
+                    '+' => tokens.push(Token::PLUS("+".to_string())),
+                    '-' => tokens.push(Token::MINUS("-".to_string())),
+                    '*' => tokens.push(Token::STAR("*".to_string())),
+                    '/' => tokens.push(Token::SLASH("/".to_string())),
+                    '%' => tokens.push(Token::MOD("%".to_string())),
+                    '(' => tokens.push(Token::L_PAREN("(".to_string())),
+                    ')' => tokens.push(Token::R_PAREN(")".to_string())),
+                    '[' => tokens.push(Token::L_BRACK("[".to_string())),
+                    ']' => tokens.push(Token::R_BRACK("]".to_string())),
+                    ',' => tokens.push(Token::COMMA(",".to_string())),
+                    '=' => tokens.push(Token::EQ("=".to_string())),
+                    ';' => tokens.push(Token::SEMICLN(";".to_string())),
+                    '.' => tokens.push(Token::DOT(".".to_string())),
                     _ => {}
                 }
             }
@@ -91,9 +91,9 @@ fn tokenizer(s: &str) -> Vec<Token> {
     // Handle any remaining number or identifier
     if !current_num.is_empty() {
         if is_num(&current_num) {
-            tokens.push(Token::NUM_VALUE);
+            tokens.push(Token::NUM_VALUE(current_num.parse().unwrap()));
         } else if is_ident(&current_num) && !is_reserved_word(&current_num) {
-            tokens.push(Token::IDENT);
+            tokens.push(Token::IDENT(current_num.to_string()));
         }
     }
 
@@ -122,7 +122,7 @@ pub fn scan(file: &str) -> LinkedList<Token> {
         }
 
         if parts.peek().is_some() {
-            token_list.push_back(Token::SEMICLN);
+            token_list.push_back(Token::SEMICLN(";".to_string()));
         }
     }
     println!("Token List: {:?}", token_list);
