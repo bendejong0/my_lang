@@ -23,8 +23,6 @@ fn is_reserved_word(s: &str) -> bool {
 }
 
 fn is_num(s: &str) -> bool {
-    println!("Checking for number {:?}", s);
-
     // numbers cannot begin with any leading zeroes.
     // Match the entire string: optional number followed by optional comma
     Regex::new(r"^[1-9][0-9]*,?$")
@@ -42,6 +40,18 @@ fn is_ident(s: &str) -> bool {
 fn tokenizer(s: &str) -> Vec<Token> {
     let mut tokens = Vec::new();
     let mut current_num = String::new();
+    //"for", "if", "else", "number", "main"
+    // if it's a reserved word
+    if is_reserved_word(s) {
+        match s {
+            "for" => tokens.push(Token::FOR),
+            "number" => tokens.push(Token::NUM_IDENT),
+            "if" => tokens.push(Token::IF),
+            "else" => tokens.push(Token::ELSE),
+            "main" => tokens.push(Token::MAIN),
+            _ => {},
+        }
+    }
 
     for ch in s.chars() {
         match ch {

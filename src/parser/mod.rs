@@ -2,13 +2,14 @@ use std::collections::LinkedList;
 use crate::token::Token as Token;
 use crate::scanner;
 
-
 // rvalue: either a math expression, a numeric literal, or an identifier.
 fn rvalue(token_list: &mut LinkedList<Token>) -> bool {
+    println!("Entering fn rvalue");
     return math_expression(token_list) || list(token_list);
 }
 
 fn list(token_list: &mut LinkedList<Token>) -> bool {
+    println!("Entering fn list");
     // Checks to make sure a list is valid.
     // Inputs: LinkedList of Tokens
     // Outputs: Bool. If the list is valid, then true. Otherwise, false.
@@ -32,7 +33,7 @@ fn list(token_list: &mut LinkedList<Token>) -> bool {
             return false;
         }
     }
-
+    println!("Exiting fn list");
     match token_list.front() {
         Some(Token::R_BRACK) => { token_list.pop_front(); return true; }
         _ => return false,
@@ -64,7 +65,7 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> bool {
 // Checks to make sure a math expression is valid.
 // Inputs: LinkedList of Tokens
 // Outputs: Bool. If math_expression is valid, then true. Else, false
-
+    println!("Entering fn math_expression");
     let mut iter = token_list.iter();
     match iter.next() {
         Some(Token::NUM_VALUE) => {}
@@ -93,12 +94,15 @@ fn declaration(token_list: &mut LinkedList<Token>) -> bool {
     //
     // Note: Consumes tokens used during the declaration.
 
+    println!("Entering fn declaration");
+
     // Create an iterator for lookahead
     if token_list.iter().next() == Some(&Token::NUM_IDENT){
         token_list.pop_front();
     } else {
         return false;
     }
+    println!("Checking for IDENT");
         
     // First token must be IDENT
     if token_list.iter().next() == Some(&Token::IDENT) {
@@ -106,24 +110,25 @@ fn declaration(token_list: &mut LinkedList<Token>) -> bool {
     } else {
         return false;
     }
+    println!("Found Ident\nChecking for MATH");
     match token_list.iter().next() {
         // Case: IDENT = MATH
         Some(Token::EQ) => {
-            token_list.pop_front();
-            match token_list.front() {
-                Some(Token::NUM_VALUE) => {
-                    return rvalue(token_list);
+                token_list.pop_front();
+                match rvalue(token_list) {
+                    true => return true,
+                    false => return false
                 }
-                _ => return false,
-            }
-        }
+        },
+        
         _ => return false,
-    }
+    } 
 }
 
 // right now, the only expression is declaration.
 // An expression must end with a semicolon.
 fn expression(token_list: &mut LinkedList<Token>) -> bool {
+    println!("Entering fn expression");
     // check for empty expression
     if token_list.front() == Some(&Token::SEMICLN) {
         token_list.pop_front();
@@ -151,5 +156,11 @@ fn expression(token_list: &mut LinkedList<Token>) -> bool {
 // returns true if it's a valid sentence.
 pub fn parse(file: &str) -> bool {
     let mut token_list: LinkedList<Token> = scanner::scan(file);
-    return expression(&mut token_list);
+    while !token_list.is_empty() {
+        match expression(&mut token_list) {
+            true => {},
+            false => return false,
+        }
+    }
+    return true;
 }
