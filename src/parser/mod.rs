@@ -178,7 +178,7 @@ fn expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
     }
 
     // TODO: should this be mutable? 
-    let mut valid_expression: Option<Expr> = if matches!(token_list.front(), Some(Token::NUM_IDENT(_))) {
+    let valid_expression: Option<Expr> = if matches!(token_list.front(), Some(Token::NUM_IDENT(_))) {
         declaration(token_list)
     }
     else{ 
