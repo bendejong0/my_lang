@@ -100,12 +100,6 @@ fn tokenizer(s: &str) -> Vec<Token> {
     tokens
 }
 
-// TODO: Improve to allow declarations such as:
-// number x=5;
-// currently you must do number x = 5;
-
-// TODO: Improve things like [3, 4, 5] so that the brackets and commas are handled without spaces.
-// currently you must do [ 3, 4, 5 ]
 pub fn scan(file: &str) -> LinkedList<Token> {
     let contents = match std::fs::read_to_string(file) {
         Ok(c) => c,
@@ -127,7 +121,6 @@ pub fn scan(file: &str) -> LinkedList<Token> {
             }
         }
 
-        // Put the semicolon back *if it actually existed*
         if parts.peek().is_some() {
             token_list.push_back(Token::SEMICLN);
         }
