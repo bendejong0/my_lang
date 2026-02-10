@@ -1,5 +1,5 @@
 use std::collections::LinkedList;
-use crate::token::{ Token as Token };
+use crate::token::{ self, Token as Token };
 use crate::scanner;
 
 #[derive(Debug)]
@@ -116,16 +116,51 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
 // Checks to make sure a math expression is valid.
 // Inputs: LinkedList of Tokens
 // Outputs: Bool. If math_expression is valid, then true. Else, false
+    
+    // check for binary, then unary, then just a number or identifier.
+    let number = token_list.front();
+    token_list.pop_front();
+    match token_list.front().unwrap() {
+
+        // check for binary operators
+        Token::PLUS(_) 
+        | Token::MINUS(_) 
+        | Token::STAR(_) 
+        | Token::SLASH(_) => {
+            let local_op: BinaryOperator = todo!("Create casting from token to binary operator on line {:?}", line!()); // TODO: implement casting from Token to Binary Operator
+            token_list.pop_front();
+            match token_list.front().unwrap() {
+                Token::IDENT(_)
+                | Token::NUM_VALUE(_) => {
+                    return Some(Expr::Binary { op: (local_op), left: Box<Expr>(number), right: Box<Token>(token_list.front().unwrap()) });
+                }
+                _ => {
+                    // put it all back
+                    token_list.push_front(*local_op);
+                }
+            }
+
+        },
+        _ => {},
+    };
+    
+    match binary_operator(token_list) {
+        Some(expr) => return Some(expr),
+        None => {}
+    };
+
+    if(token_list.front() == Some(&Token::DBL_PLUS("++".to_string()))) {
+        //return unary_operator(token_list);
+    }
+    
     match token_list.front() {
         Some(Token::NUM_VALUE(x)) => { let val = *x; token_list.pop_front(); return Some(Expr::Int(val)); }
         _ => {},
     }  
 
-    if matches!(token_list.front(), Some(Token::PLUS(_)) | Some(Token::MINUS(_)) | Some(Token::STAR(_)) | Some(Token::SLASH(_))) {
-        return binary_operator(token_list);
-    }
+    
 
-    else if matches!(token_list.front(), Some(Token::DBL_PLUS(_))) {
+    if matches!(token_list.front(), Some(Token::DBL_PLUS(_))) {
         unary_operator(token_list);
     }
 
