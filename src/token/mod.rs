@@ -62,3 +62,35 @@ impl fmt::Debug for Token {
         write!(f, "{}", s)
     }
 }
+
+impl Clone for Token {
+    fn clone(&self) -> Self {
+        match self {
+            Token::MAIN(x) => Token::MAIN(x.clone()),
+            Token::IDENT(x) => Token::IDENT(x.clone()),
+            Token::PLUS(x) => Token::PLUS(x.clone()),
+            Token::MINUS(x) => Token::MINUS(x.clone()),
+            Token::STAR(x) => Token::STAR(x.clone()),
+            Token::SLASH(x) => Token::SLASH(x.clone()),
+            Token::MOD(x) => Token::MOD(x.clone()),
+            Token::R_CURLY(x) => Token::R_CURLY(x.clone()),
+            Token::L_CURLY(x) => Token::L_CURLY(x.clone()),
+            Token::L_PAREN(x) => Token::L_PAREN(x.clone()),
+            Token::R_PAREN(x) => Token::R_PAREN(x.clone()),
+            Token::IF(x) => Token::IF(x.clone()),
+            Token::ELSE(x) => Token::ELSE(x.clone()),
+            Token::FOR(x) => Token::FOR(x.clone()),
+            Token::SEMICLN(x) => Token::SEMICLN(x.clone()),
+            Token::DBL_CLN(x) => Token::DBL_CLN(x.clone()),
+            Token::DBL_PLUS(x) => Token::DBL_PLUS(x.clone()),
+            Token::DOT(x) => Token::DOT(x.clone()),
+            Token::DBL_DOT(x) => Token::DBL_DOT(x.clone()),
+            Token::NUM_VALUE(x) => Token::NUM_VALUE(*x),
+            Token::NUM_IDENT(x) => Token::NUM_IDENT(x.clone()),
+            Token::EQ(x) => Token::EQ(x.clone()),
+            Token::L_BRACK(x) => Token::L_BRACK(x.clone()),
+            Token::R_BRACK(x) => Token::R_BRACK(x.clone()),
+            Token::COMMA(x) => Token::COMMA(x.clone()),
+        }
+    }
+}

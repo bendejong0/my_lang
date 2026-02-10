@@ -1,5 +1,5 @@
 use std::collections::LinkedList;
-use crate::token::{ self, Token as Token };
+use crate::token::{ Token as Token };
 use crate::scanner;
 
 #[derive(Debug)]
@@ -28,7 +28,6 @@ pub enum Stmt {
         val: Expr
     }
 }
-
 
 // rvalue: either a math expression, a numeric literal, or an identifier.
 fn rvalue(token_list: &mut LinkedList<Token>) -> Option<Expr> {
@@ -118,7 +117,7 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
 // Outputs: Bool. If math_expression is valid, then true. Else, false
     
     // check for binary, then unary, then just a number or identifier.
-    let number = token_list.front();
+    let number = (*token_list.front().unwrap()).clone();
     token_list.pop_front();
     match token_list.front().unwrap() {
 
@@ -127,16 +126,38 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
         | Token::MINUS(_) 
         | Token::STAR(_) 
         | Token::SLASH(_) => {
-            let local_op: BinaryOperator = todo!("Create casting from token to binary operator on line {:?}", line!()); // TODO: implement casting from Token to Binary Operator
+            let local_op: BinaryOperator = match number.clone() {
+                Token::PLUS(_) => BinaryOperator::Add,
+                Token::MINUS(_) => BinaryOperator::Sub,
+                Token::STAR(_) => BinaryOperator::Mul,
+                Token::SLASH(_) => BinaryOperator::Div,
+                _ => unreachable!(),
+            };
             token_list.pop_front();
+            
+            let left_expr = match Some(number.clone()) {
+                Some(Token::NUM_VALUE(val)) => Expr::Int(val),
+                Some(Token::IDENT(name)) => Expr::Ident(name.clone()),
+                _ => {
+                    token_list.push_front(number);
+                    return None;
+                }
+            };
+            
             match token_list.front().unwrap() {
-                Token::IDENT(_)
-                | Token::NUM_VALUE(_) => {
-                    return Some(Expr::Binary { op: (local_op), left: Box<Expr>(number), right: Box<Token>(token_list.front().unwrap()) });
+                Token::IDENT(name) => {
+                    let right_name = name.clone();
+                    token_list.pop_front();
+                    return Some(Expr::Binary { op: (local_op), left: Box::new(left_expr), right: Box::new(Expr::Ident(right_name)) });
+                }
+                Token::NUM_VALUE(val) => {
+                    let right_val = *val;
+                    token_list.pop_front();
+                    return Some(Expr::Binary { op: (local_op), left: Box::new(left_expr), right: Box::new(Expr::Int(right_val)) });
                 }
                 _ => {
                     // put it all back
-                    token_list.push_front(*local_op);
+                    token_list.push_front(number);
                 }
             }
 
@@ -149,7 +170,7 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
         None => {}
     };
 
-    if(token_list.front() == Some(&Token::DBL_PLUS("++".to_string()))) {
+    if token_list.front() == Some(&Token::DBL_PLUS("++".to_string())) {
         //return unary_operator(token_list);
     }
     
