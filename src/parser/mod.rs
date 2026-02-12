@@ -1,3 +1,6 @@
+// TODO: Allow things like x = x + 3 
+// instead of number x = x + 3
+
 use std::collections::LinkedList;
 use crate::token::{ Token as Token };
 use crate::scanner;
@@ -80,25 +83,6 @@ fn list(token_list: &mut LinkedList<Token>) -> Option<Expr> {
         _ => return None,
     }
 }
-
-//fn binary_operator(token_list: &mut LinkedList<Token>) -> Option<Expr> {
-//    let local_op: BinaryOperator = match token_list.front() {
-//        Some(Token::PLUS(_)) => BinaryOperator::Add,
-//        Some(Token::MINUS(_)) => BinaryOperator::Sub,
-//        Some(Token::STAR(_)) => BinaryOperator::Mul,
-//        Some(Token::SLASH(_)) => BinaryOperator::Div,
-//        _ => return None,
-//    };
-//
-//    token_list.pop_front();
-//    match rvalue(token_list) {
-//        Some(right_expr) => {
-//            Some(Expr::Binary { op: local_op, left: Box::new(Expr::Int(0)), right: Box::new(right_expr) })
-//        }
-//        _ => None,
-//    }
-//}
-
 
 fn unary_operator(token_list: &mut LinkedList<Token>) -> bool {
     if token_list.front() == Some(&Token::DBL_PLUS("++".to_string())) {
