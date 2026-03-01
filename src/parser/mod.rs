@@ -3,7 +3,6 @@
 
 use std::collections::LinkedList;
 use crate::token::{ self, Token as Token, Expr as Expr, BinaryOperator as BinaryOperator };
-use crate::token::{ Token as Token };
 use crate::scanner;
 
 pub enum Stmt {
@@ -85,9 +84,8 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
         _ => return None,
     }
 
-    let number = (*token_list.front().unwrap()).clone();
-    token_list.pop_front();
-    match token_list.front().unwrap() {
+    let head = token_list.pop_front().unwrap();
+    match head {
         // check for binary operators
         Token::PLUS(_) 
         | Token::MINUS(_) 
@@ -103,20 +101,18 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
                                                left: Box::<Expr>::new(number.unwrap().to_expr()), 
                                                right: Box::<Expr>::new(next.to_expr()) 
                                             });
-            let local_op: BinaryOperator = match token_list.front().unwrap() {
-                Token::PLUS(_) => BinaryOperator::Add,
-                Token::MINUS(_) => BinaryOperator::Sub,
-                Token::STAR(_) => BinaryOperator::Mul,
-                Token::SLASH(_) => BinaryOperator::Div,
-                _ => unreachable!("{:?}", number.clone()),
-            };
-            token_list.pop_front();
+                },
+                _ => {}
+            }
+        
+            token_list.pop_front(); // huh?
             
-            let left_expr = match Some(number.clone()) {
+
+            let left_expr = match number.clone() {
                 Some(Token::NUM_VALUE(val)) => Expr::Int(val),
                 Some(Token::IDENT(name)) => Expr::Ident(name.clone()),
                 _ => {
-                    token_list.push_front(number);
+                    token_list.push_front(number.unwrap());
                     return None;
                 }
             };
@@ -135,32 +131,12 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
                 _ => {
                     // put it all back
                     token_list.push_front(local_op.to_token());
-                    token_list.push_front(number);
+                    token_list.push_front(head);
                 }
             }
-        },
-        _ => {},
-    };
-    
-    match binary_operator(token_list) {
-        Some(expr) => return Some(expr),
-        None => {}
-    };
-
-    if token_list.front() == Some(&Token::DBL_PLUS("++".to_string())) {
-        //return unary_operator(token_list);
+        }
+        _ => {}
     }
-        // TODO implement ++ operator
-        _ => { 
-            match number {
-                Token::NUM_VALUE(val) => return Some(Expr::Int(val)),
-                Token::IDENT(name) => return Some(Expr::Ident(name)),
-                _ => return None,
-            }
-        },
-    };
-        
-    
     
     match token_list.front() {
         Some(Token::NUM_VALUE(x)) => { let val = *x; token_list.pop_front(); return Some(Expr::Int(val)); }
