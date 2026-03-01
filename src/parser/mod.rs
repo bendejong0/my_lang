@@ -40,7 +40,7 @@ fn list(token_list: &mut LinkedList<Token>) -> Option<Expr> {
         _ => return None,
     }
     // check for empty bracket
-    if Some(&Token::L_BRACK("[".to_string())) == token_list.front() {
+    if Some(&Token::R_BRACK("]".to_string())) == token_list.front() {
         token_list.pop_front();
         return Some(Expr::List(Vec::new()));
     }
