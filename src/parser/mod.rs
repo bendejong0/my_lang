@@ -1,5 +1,9 @@
+// TODO: Allow things like x = x + 3 
+// instead of number x = x + 3
+
 use std::collections::LinkedList;
 use crate::token::{ self, Token as Token, Expr as Expr, BinaryOperator as BinaryOperator };
+use crate::token::{ Token as Token };
 use crate::scanner;
 
 pub enum Stmt {
@@ -9,10 +13,8 @@ pub enum Stmt {
     }
 }
 
-
 // rvalue: either a math expression, a numeric literal, or an identifier.
 fn rvalue(token_list: &mut LinkedList<Token>) -> Option<Expr> {
-    
     match math_expression(token_list) {
         Some(expr) => return Some(expr),
         None => {}
@@ -39,24 +41,22 @@ fn list(token_list: &mut LinkedList<Token>) -> Option<Expr> {
         _ => return None,
     }
     // check for empty bracket
-    if matches!(token_list.front(), Some(Token::R_BRACK(_))) {
+    if Some(&Token::L_BRACK("[".to_string())) == token_list.front() {
         token_list.pop_front();
-        return Some(Expr::List(vec![]));
+        return Some(Expr::List(Vec::new()));
     }
 
-    let mut list_items = vec![];
+    let mut list_items: Vec<Expr> = Vec::new();
     if let Some(expr) = rvalue(token_list) {
         list_items.push(expr);
-    } else {
-        return None;
     }
 
-    while matches!(token_list.front(), Some(Token::COMMA(_))) {
+    while token_list.front() == Some(&Token::COMMA(",".to_string())) {
         token_list.pop_front();
-        if let Some(expr) = rvalue(token_list) {
-            list_items.push(expr);
-        } else {
-            return None;
+        // if we find an rvalue, then put it on the list_items.
+        match rvalue(token_list) {
+            Some(expr) => { list_items.push(expr); }
+            _ => { return None }
         }
     }
     match token_list.front() {
@@ -65,30 +65,10 @@ fn list(token_list: &mut LinkedList<Token>) -> Option<Expr> {
     }
 }
 
-fn binary_operator(token_list: &mut LinkedList<Token>) -> Option<Expr> {
-    let local_op: BinaryOperator = match token_list.front() {
-        Some(Token::PLUS(_)) => BinaryOperator::Add,
-        Some(Token::MINUS(_)) => BinaryOperator::Sub,
-        Some(Token::STAR(_)) => BinaryOperator::Mul,
-        Some(Token::SLASH(_)) => BinaryOperator::Div,
-        _ => return None,
-    };
-
-    token_list.pop_front();
-    match rvalue(token_list) {
-        Some(right_expr) => {
-            Some(Expr::Binary { op: local_op, left: Box::new(Expr::Int(0)), right: Box::new(right_expr) })
-        }
-        _ => None,
-    }
-}
-
-
 fn unary_operator(token_list: &mut LinkedList<Token>) -> bool {
     if token_list.front() == Some(&Token::DBL_PLUS("++".to_string())) {
         return true;
     }
-
     return false;
 }
 
@@ -99,8 +79,15 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
     
     // check for binary, then unary, then just a number or identifier.
     let number = token_list.pop_front();
-    match token_list.front().unwrap() {
+    match token_list.front().clone().unwrap() {
+        Token::NUM_VALUE(_) => {},
+        Token::IDENT(_) => {},
+        _ => return None,
+    }
 
+    let number = (*token_list.front().unwrap()).clone();
+    token_list.pop_front();
+    match token_list.front().unwrap() {
         // check for binary operators
         Token::PLUS(_) 
         | Token::MINUS(_) 
@@ -116,13 +103,41 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
                                                left: Box::<Expr>::new(number.unwrap().to_expr()), 
                                                right: Box::<Expr>::new(next.to_expr()) 
                                             });
+            let local_op: BinaryOperator = match token_list.front().unwrap() {
+                Token::PLUS(_) => BinaryOperator::Add,
+                Token::MINUS(_) => BinaryOperator::Sub,
+                Token::STAR(_) => BinaryOperator::Mul,
+                Token::SLASH(_) => BinaryOperator::Div,
+                _ => unreachable!("{:?}", number.clone()),
+            };
+            token_list.pop_front();
+            
+            let left_expr = match Some(number.clone()) {
+                Some(Token::NUM_VALUE(val)) => Expr::Int(val),
+                Some(Token::IDENT(name)) => Expr::Ident(name.clone()),
+                _ => {
+                    token_list.push_front(number);
+                    return None;
+                }
+            };
+            
+            match token_list.front().unwrap() {
+                Token::IDENT(name) => {
+                    let right_name = name.clone();
+                    token_list.pop_front();
+                    return Some(Expr::Binary { op: (local_op), left: Box::new(left_expr), right: Box::new(Expr::Ident(right_name)) });
+                }
+                Token::NUM_VALUE(val) => {
+                    let right_val = *val;
+                    token_list.pop_front();
+                    return Some(Expr::Binary { op: (local_op), left: Box::new(left_expr), right: Box::new(Expr::Int(right_val)) });
                 }
                 _ => {
                     // put it all back
                     token_list.push_front(local_op.to_token());
+                    token_list.push_front(number);
                 }
             }
-
         },
         _ => {},
     };
@@ -135,13 +150,22 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
     if token_list.front() == Some(&Token::DBL_PLUS("++".to_string())) {
         //return unary_operator(token_list);
     }
+        // TODO implement ++ operator
+        _ => { 
+            match number {
+                Token::NUM_VALUE(val) => return Some(Expr::Int(val)),
+                Token::IDENT(name) => return Some(Expr::Ident(name)),
+                _ => return None,
+            }
+        },
+    };
+        
+    
     
     match token_list.front() {
         Some(Token::NUM_VALUE(x)) => { let val = *x; token_list.pop_front(); return Some(Expr::Int(val)); }
         _ => {},
-    }  
-
-    
+    }
 
     if matches!(token_list.front(), Some(Token::DBL_PLUS(_))) {
         unary_operator(token_list);
@@ -193,19 +217,17 @@ fn expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
         token_list.pop_front();
         return Some(Expr::Empty);
     }
-
-    // TODO: should this be mutable? 
+    
     let valid_expression: Option<Expr> = if matches!(token_list.front(), Some(Token::NUM_IDENT(_))) {
         declaration(token_list)
     }
-    else{ 
+    else{
         rvalue(token_list)
     };
 
     if valid_expression.is_none() {
         return None;
     }
-
     else if matches!(token_list.front(), Some(Token::SEMICLN(_))) {
         token_list.pop_front();
     }
@@ -216,6 +238,7 @@ fn expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
 // returns true if it's a valid sentence.
 pub fn parse(file: &str) -> bool {
     let mut token_list: LinkedList<Token> = scanner::scan(file);
+    
     while !token_list.is_empty() {
         match expression(&mut token_list) {
             None => return false,  // if its not a valid expression, then return false.
