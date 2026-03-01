@@ -141,7 +141,8 @@ impl BinaryOperator {
             BinaryOperator::Mod => Token::MOD("%".to_string()),
         }
     }
-}
+} 
+
 impl Clone for Token {
     fn clone(&self) -> Self {
         match self {

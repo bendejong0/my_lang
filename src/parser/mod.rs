@@ -34,7 +34,7 @@ fn rvalue(token_list: &mut LinkedList<Token>) -> Option<Expr> {
 fn list(token_list: &mut LinkedList<Token>) -> Option<Expr> {
     // Checks to make sure a list is valid.
     // Inputs: LinkedList of Tokens
-    // Outputs: Bool. If the list is valid, then true. Otherwise, false.
+    // Outputs: Option<Expr>. If the list is valid, then Some(Expr). Otherwise, None.
     match token_list.front() {
         Some(Token::L_BRACK(_)) => { token_list.pop_front(); }
         _ => return None,
@@ -74,7 +74,7 @@ fn unary_operator(token_list: &mut LinkedList<Token>) -> bool {
 fn math_expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
 // Checks to make sure a math expression is valid.
 // Inputs: LinkedList of Tokens
-// Outputs: Bool. If math_expression is valid, then true. Else, false
+// Outputs: Option<Expr>. If math_expression is valid, then Some(Expr). Else, None
     
     let left_token = match token_list.front() {
         Some(Token::NUM_VALUE(_)) | Some(Token::IDENT(_)) => token_list.pop_front().unwrap(),
@@ -105,11 +105,38 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
         _ => return None,
     };
 
-    Some(Expr::Binary {
+    let mut result = Expr::Binary {
         op,
         left: Box::new(left_expr),
         right: Box::new(right_token.to_expr()),
-    })
+    };
+
+    // check for more binary operators, recursively build the expression tree.
+    loop {
+        let is_binop = matches!(token_list.front(),
+            Some(Token::PLUS(_)) | Some(Token::MINUS(_)) |
+            Some(Token::STAR(_)) | Some(Token::SLASH(_)) | Some(Token::MOD(_))
+        );
+
+        if !is_binop {
+            break;
+        }
+
+        let next_op = token_list.pop_front().unwrap().to_binaryoperator();
+
+        let next_token = match token_list.front() {
+            Some(Token::NUM_VALUE(_)) | Some(Token::IDENT(_)) => token_list.pop_front().unwrap(),
+            _ => return None,
+        };
+
+        result = Expr::Binary {
+            op: next_op,
+            left: Box::new(result),
+            right: Box::new(next_token.to_expr()),
+        };
+    }
+
+    return Some(result);
 }
     
 fn declaration(token_list: &mut LinkedList<Token>) -> Option<Expr> {
