@@ -2,7 +2,7 @@
 // instead of number x = x + 3
 
 use std::collections::LinkedList;
-use crate::token::{ self, Token as Token, Expr as Expr, BinaryOperator as BinaryOperator };
+use crate::token::{ Token as Token, Expr as Expr, BinaryOperator as BinaryOperator };
 use crate::scanner;
 
 pub enum Stmt {
@@ -76,81 +76,42 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
 // Inputs: LinkedList of Tokens
 // Outputs: Bool. If math_expression is valid, then true. Else, false
     
-    // check for binary, then unary, then just a number or identifier.
-    let number = token_list.pop_front();
-    match token_list.front().clone().unwrap() {
-        Token::NUM_VALUE(_) => {},
-        Token::IDENT(_) => {},
+    let left_token = match token_list.front() {
+        Some(Token::NUM_VALUE(_)) | Some(Token::IDENT(_)) => token_list.pop_front().unwrap(),
         _ => return None,
+    };
+
+    let left_expr = left_token.to_expr();
+
+    // Check if next token is a binary operator 
+    let is_binop = matches!(token_list.front(),
+        Some(Token::PLUS(_)) | Some(Token::MINUS(_)) |
+        Some(Token::STAR(_)) | Some(Token::SLASH(_)) | Some(Token::MOD(_))
+    );
+
+    if !is_binop {
+        token_list.push_front(match left_expr {
+            Expr::Int(v) => Token::NUM_VALUE(v),
+            Expr::Ident(n) => Token::IDENT(n),
+            _ => unreachable!(),
+        });
+        return None;
     }
 
-    let head = token_list.pop_front().unwrap();
-    match head {
-        // check for binary operators
-        Token::PLUS(_) 
-        | Token::MINUS(_) 
-        | Token::STAR(_) 
-        | Token::SLASH(_) => {
-            let local_op: BinaryOperator = token_list.pop_front().unwrap().to_binaryoperator();
-            let next = token_list.pop_front().unwrap();
-            match next {
-                Token::IDENT(_)
-                | Token::NUM_VALUE(_) => {
-                    return Some(Expr::Binary { 
-                                               op: (local_op), 
-                                               left: Box::<Expr>::new(number.unwrap().to_expr()), 
-                                               right: Box::<Expr>::new(next.to_expr()) 
-                                            });
-                },
-                _ => {}
-            }
-        
-            token_list.pop_front(); // huh?
-            
+    let op = token_list.pop_front().unwrap().to_binaryoperator();
 
-            let left_expr = match number.clone() {
-                Some(Token::NUM_VALUE(val)) => Expr::Int(val),
-                Some(Token::IDENT(name)) => Expr::Ident(name.clone()),
-                _ => {
-                    token_list.push_front(number.unwrap());
-                    return None;
-                }
-            };
-            
-            match token_list.front().unwrap() {
-                Token::IDENT(name) => {
-                    let right_name = name.clone();
-                    token_list.pop_front();
-                    return Some(Expr::Binary { op: (local_op), left: Box::new(left_expr), right: Box::new(Expr::Ident(right_name)) });
-                }
-                Token::NUM_VALUE(val) => {
-                    let right_val = *val;
-                    token_list.pop_front();
-                    return Some(Expr::Binary { op: (local_op), left: Box::new(left_expr), right: Box::new(Expr::Int(right_val)) });
-                }
-                _ => {
-                    // put it all back
-                    token_list.push_front(local_op.to_token());
-                    token_list.push_front(head);
-                }
-            }
-        }
-        _ => {}
-    }
-    
-    match token_list.front() {
-        Some(Token::NUM_VALUE(x)) => { let val = *x; token_list.pop_front(); return Some(Expr::Int(val)); }
-        _ => {},
-    }
+    let right_token = match token_list.front() {
+        Some(Token::NUM_VALUE(_)) | Some(Token::IDENT(_)) => token_list.pop_front().unwrap(),
+        _ => return None,
+    };
 
-    if matches!(token_list.front(), Some(Token::DBL_PLUS(_))) {
-        unary_operator(token_list);
-    }
-
-    return None;
-    
+    Some(Expr::Binary {
+        op,
+        left: Box::new(left_expr),
+        right: Box::new(right_token.to_expr()),
+    })
 }
-
+    
 fn declaration(token_list: &mut LinkedList<Token>) -> Option<Expr> {
     // Checks to make sure a declaration is valid.
     // Inputs: LinkedList of Tokens
@@ -193,20 +154,27 @@ fn expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
         token_list.pop_front();
         return Some(Expr::Empty);
     }
+    println!("Line: {}, Token list remaining elements: {:?}", line!(), token_list);
     
-    let valid_expression: Option<Expr> = if matches!(token_list.front(), Some(Token::NUM_IDENT(_))) {
-        declaration(token_list)
-    }
-    else{
-        rvalue(token_list)
+    // check for declaration, then rvalue
+    let valid_expression = match token_list.front() {
+        Some(Token::NUM_IDENT(_)) => declaration(token_list),
+        _ => rvalue(token_list),
     };
 
+    println!("Line: {}, Token list remaining elements: {:?}", line!(), token_list);
+    println!("Line: {}, Valid expression: {:?}", line!(), valid_expression);
+
+    // check for semicolon at the end of the expression.
     if valid_expression.is_none() {
+        println!("Line: {}, Token list remaining elements: {:?}", line!(), token_list);
         return None;
     }
-    else if matches!(token_list.front(), Some(Token::SEMICLN(_))) {
-        token_list.pop_front();
+    match token_list.pop_front() {
+        Some(Token::SEMICLN(_)) => return valid_expression,
+        _ => return None,
     }
+    println!("Line: {}, Token list remaining elements: {:?}", line!(), token_list);
 
     return valid_expression;
 }
@@ -217,9 +185,10 @@ pub fn parse(file: &str) -> bool {
     
     while !token_list.is_empty() {
         match expression(&mut token_list) {
-            None => return false,  // if its not a valid expression, then return false.
+            None => { println!("Token list remaining elements: {:?}", token_list); return false},  // if its not a valid expression, then return false.
             _ => {}                // otherwise continue.
         }
     }
+    println!("Token list remaining elements: {:?}", token_list);
     return true;
 }
