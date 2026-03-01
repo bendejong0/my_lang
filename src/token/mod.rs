@@ -62,3 +62,83 @@ impl fmt::Debug for Token {
         write!(f, "{}", s)
     }
 }
+
+#[derive(Debug)]
+pub enum BinaryOperator {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
+}
+#[derive(Debug)]
+pub enum Expr {
+    Int(i64),
+    Ident(String),
+    Binary {
+        op: BinaryOperator,
+        left: Box<Expr>,
+        right: Box<Expr>
+    },
+    List(Vec<Expr>),
+    Empty,
+}
+
+impl Token {
+    pub fn to_expr(self) -> Expr {
+        match self {
+            Token::NUM_VALUE(x) => Expr::Int(x),
+            Token::IDENT(name) => Expr::Ident(name),
+            _ => Expr::Empty, // or panic!() if you prefer
+        }
+    }
+
+    pub fn to_binaryoperator(self) -> BinaryOperator {
+        match self {
+            Token::SLASH(_) => BinaryOperator::Div,
+            Token::MOD(_) => BinaryOperator::Mod,
+            Token::PLUS(_) => BinaryOperator::Add,
+            Token::STAR(_) => BinaryOperator::Mul,
+            Token::MINUS(_) => BinaryOperator::Sub,
+            _ => panic!("Error converting {self} to binaryoperator in to_binaryoperator")
+        }
+    }
+
+    pub fn clone(self) -> Token {
+        match self {
+            Token::MAIN(x) => Token::MAIN(x.clone()),
+            Token::IDENT(x) => Token::IDENT(x.clone()),
+            Token::PLUS(x) => Token::PLUS(x.clone()),
+            Token::MINUS(x) => Token::MINUS(x.clone()),
+            Token::STAR(x) => Token::STAR(x.clone()),
+            Token::SLASH(x) => Token::SLASH(x.clone()),
+            Token::MOD(x) => Token::MOD(x.clone()),
+            Token::R_CURLY(x) => Token::R_CURLY(x.clone()),
+            Token::L_CURLY(x) => Token::L_CURLY(x.clone()),
+            Token::L_PAREN(x) => Token::L_PAREN(x.clone()),
+            Token::R_PAREN(x) => Token::R_PAREN(x.clone()),
+            Token::IF(x) => Token::IF(x.clone()),
+            Token::ELSE(x) => Token::ELSE(x.clone()),
+            Token::FOR(x) => Token::FOR(x.clone()),
+            Token::SEMICLN(x) => Token::SEMICLN(x.clone()),
+            Token::DBL_CLN(x) => Token::DBL_CLN(x.clone()),
+            Token::DBL_PLUS(x) => Token::DBL_PLUS(x.clone()),
+            Token::DOT(x) => Token::DOT(x.clone()),
+            Token::DBL_DOT(x) => Token::DBL_DOT(x.clone()),
+            // For NUM_VALUE, we can just copy the value since it's a primitive type
+            other => other,
+        }
+    }
+}
+
+impl BinaryOperator {
+    pub fn to_token(self) -> Token {
+        match self {
+            BinaryOperator::Add => Token::PLUS("+".to_string()),
+            BinaryOperator::Sub => Token::MINUS("-".to_string()),
+            BinaryOperator::Mul => Token::STAR("*".to_string()),
+            BinaryOperator::Div => Token::SLASH("/".to_string()),
+            BinaryOperator::Mod => Token::MOD("%".to_string()),
+        }
+    }
+}
