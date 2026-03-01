@@ -30,6 +30,15 @@ pub enum Token{
     COMMA(String)
 }
 
+
+pub enum Stmt {
+    Dec {
+        name: String,
+        val: Expr
+    },
+    Expr(Expr),
+}
+
 impl fmt::Debug for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {

@@ -2,15 +2,8 @@
 // instead of number x = x + 3
 
 use std::collections::LinkedList;
-use crate::token::{ Token as Token, Expr as Expr, BinaryOperator as BinaryOperator };
+use crate::token::{ Token as Token, Expr as Expr, BinaryOperator as BinaryOperator, Stmt as Stmt };
 use crate::scanner;
-
-pub enum Stmt {
-    Dec {
-        name: String,
-        val: Expr
-    }
-}
 
 // rvalue: either a math expression, a numeric literal, or an identifier.
 fn rvalue(token_list: &mut LinkedList<Token>) -> Option<Expr> {
@@ -139,83 +132,61 @@ fn math_expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
     return Some(result);
 }
     
-fn declaration(token_list: &mut LinkedList<Token>) -> Option<Expr> {
-    // Checks to make sure a declaration is valid.
-    // Inputs: LinkedList of Tokens
-    // Outputs: Bool. If the declaration is valid, then true. Otherwise, false.
-    //
-    // Note: Consumes tokens used during the declaration.
-
-
-    // Create an iterator for lookahead
-    if matches!(token_list.front(), Some(Token::NUM_IDENT(_))){
+fn declaration(token_list: &mut LinkedList<Token>) -> Option<Stmt> {
+    if matches!(token_list.front(), Some(Token::NUM_IDENT(_))) {
         token_list.pop_front();
     } else {
         return None;
     }
-        
-    // First token must be IDENT
-    if matches!(token_list.front(), Some(Token::IDENT(_))) {
-        token_list.pop_front();
-    } else {
-        return None;
-    }
-    match token_list.front() {
-        // Case: IDENT = MATH
-        Some(Token::EQ(_)) => {
-                token_list.pop_front();
-                match rvalue(token_list) {
-                    Some(expr) => return Some(expr),
-                    None => return None
-                }
+
+    let name = match token_list.front() {
+        Some(Token::IDENT(_)) => {
+            if let Some(Token::IDENT(n)) = token_list.pop_front() { n } else { unreachable!() }
         },
-        
         _ => return None,
-    } 
+    };
+
+    match token_list.front() {
+        Some(Token::EQ(_)) => {
+            token_list.pop_front();
+            match rvalue(token_list) {
+                Some(expr) => return Some(Stmt::Dec { name, val: expr }),
+                None => return None,
+            }
+        },
+        _ => return None,
+    }
 }
 
 // An expression must end with a semicolon.
-fn expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
-    // check for empty expression
+fn expression(token_list: &mut LinkedList<Token>) -> Option<Stmt> {
     if matches!(token_list.front(), Some(Token::SEMICLN(_))) {
         token_list.pop_front();
-        return Some(Expr::Empty);
+        return Some(Stmt::Expr(Expr::Empty));
     }
-    println!("Line: {}, Token list remaining elements: {:?}", line!(), token_list);
-    
-    // check for declaration, then rvalue
-    let valid_expression = match token_list.front() {
+
+    let stmt = match token_list.front() {
         Some(Token::NUM_IDENT(_)) => declaration(token_list),
-        _ => rvalue(token_list),
+        _ => rvalue(token_list).map(Stmt::Expr),
     };
 
-    println!("Line: {}, Token list remaining elements: {:?}", line!(), token_list);
-    println!("Line: {}, Valid expression: {:?}", line!(), valid_expression);
+    if stmt.is_none() { return None; }
 
-    // check for semicolon at the end of the expression.
-    if valid_expression.is_none() {
-        println!("Line: {}, Token list remaining elements: {:?}", line!(), token_list);
-        return None;
-    }
     match token_list.pop_front() {
-        Some(Token::SEMICLN(_)) => return valid_expression,
+        Some(Token::SEMICLN(_)) => return stmt,
         _ => return None,
     }
-    println!("Line: {}, Token list remaining elements: {:?}", line!(), token_list);
-
-    return valid_expression;
 }
 
-// returns true if it's a valid sentence.
-pub fn parse(file: &str) -> bool {
+pub fn parse(file: &str) -> LinkedList<Stmt> {
     let mut token_list: LinkedList<Token> = scanner::scan(file);
-    
+    let mut stmts: LinkedList<Stmt> = LinkedList::new();
+
     while !token_list.is_empty() {
         match expression(&mut token_list) {
-            None => { println!("Token list remaining elements: {:?}", token_list); return false},  // if its not a valid expression, then return false.
-            _ => {}                // otherwise continue.
+            None => { return stmts; },
+            Some(stmt) => stmts.push_back(stmt),
         }
     }
-    println!("Token list remaining elements: {:?}", token_list);
-    return true;
+    return stmts;
 }
