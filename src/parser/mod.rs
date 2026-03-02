@@ -57,12 +57,13 @@ fn list(token_list: &mut LinkedList<Token>) -> Option<Expr> {
     }
 }
 
-fn unary_operator(token_list: &mut LinkedList<Token>) -> bool {
-    if token_list.front() == Some(&Token::DBL_PLUS("++".to_string())) {
-        return true;
-    }
-    return false;
-}
+// currently does nothing
+//    fn unary_operator(token_list: &mut LinkedList<Token>) -> bool {
+//        if token_list.front() == Some(&Token::DBL_PLUS("++".to_string())) {
+//            return true;
+//        }
+//        return false;
+//    }
 
 fn math_expression(token_list: &mut LinkedList<Token>) -> Option<Expr> {
 // Checks to make sure a math expression is valid.
