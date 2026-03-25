@@ -13,7 +13,7 @@ RValue      → Math
             | List
             | RValue :: RValue
 
-List        → L
+List        → L_BRACKET (RValue (COMMA RValue)*)* R_BRACKET
 
 Math        → NUM_VALUE (BinaryOperator NUM_VALUE)*
             | UnaryOperator NUM_VALUE
